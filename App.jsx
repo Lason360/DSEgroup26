@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Dimensions } from 'react-native';
 import PoseDetectionCamera from './Components/cameraComponent'; // Adjust path as necessary
 
 const PoseApp = () => {
   const [landmarks, setLandmarks] = useState([]);
 
+  const CAM_PREVIEW_WIDTH = Dimensions.get('window').width;
+  const CAM_PREVIEW_HEIGHT = CAM_PREVIEW_WIDTH / (3 / 4);
+
   // Callback to handle detected landmarks
   const handleLandmarksDetected = (keypoints) => {
-    setLandmarks(keypoints);
+
+    const normalizedKeypoints = keypoints.map((keypoint) => ({
+      ...keypoint,
+      x: (1 - (keypoint.x / (CAM_PREVIEW_WIDTH*0.5))),
+      y: (1 - (keypoint.y / (CAM_PREVIEW_HEIGHT*0.5))),
+    }));
+    setLandmarks(normalizedKeypoints);
   };
 
   return (
