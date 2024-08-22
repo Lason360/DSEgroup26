@@ -5,7 +5,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as posedetection from '@tensorflow-models/pose-detection';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { bundleResourceIO, cameraWithTensors } from '@tensorflow/tfjs-react-native';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Line, Circle } from 'react-native-svg';
 
 const TensorCamera = cameraWithTensors(Camera);
 
@@ -114,6 +114,21 @@ const PoseDetectionCamera = ({ onLandmarksDetected }) => {
     loop();
   };
 
+  const SKELETON_CONNECTIONS = [
+    ['left_shoulder', 'right_shoulder'],
+    ['left_shoulder', 'left_elbow'],
+    ['left_elbow', 'left_wrist'],
+    ['right_shoulder', 'right_elbow'],
+    ['right_elbow', 'right_wrist'],
+    ['left_shoulder', 'left_hip'],
+    ['right_shoulder', 'right_hip'],
+    ['left_hip', 'right_hip'],
+    ['left_hip', 'left_knee'],
+    ['left_knee', 'left_ankle'],
+    ['right_hip', 'right_knee'],
+    ['right_knee', 'right_ankle'],
+  ];
+
   //Landmarks rendering
   const renderPose = () => {
     if (poses != null && poses.length > 0) {
@@ -127,20 +142,50 @@ const PoseDetectionCamera = ({ onLandmarksDetected }) => {
             (isPortrait() ? CAM_PREVIEW_WIDTH : CAM_PREVIEW_HEIGHT);
           const cy = (y / getOutputTensorHeight()) *
             (isPortrait() ? CAM_PREVIEW_HEIGHT : CAM_PREVIEW_WIDTH);
+  
+          // Save the coordinates for drawing lines
+          return { ...k, cx, cy };
+        });
+  
+      // Render keypoints as circles
+      const renderedKeypoints = keypoints.map((k, index) => (
+        <Circle
+          key={`skeletonkp_${k.name}`}
+          cx={k.cx}
+          cy={k.cy}
+          r='4'
+          strokeWidth='2'
+          fill='#FFFFFF'
+          stroke='white'
+        />
+      ));
+      // Render lines between keypoints for the skeleton
+      const renderedSkeleton = SKELETON_CONNECTIONS.map(([point1, point2], index) => {
+        const kp1 = keypoints.find((k) => k.name === point1);
+        const kp2 = keypoints.find((k) => k.name === point2);
+  
+        if (kp1 && kp2) {
           return (
-            <Circle
-              key={`skeletonkp_${k.name}`}
-              cx={cx}
-              cy={cy}
-              r='4'
-              strokeWidth='2'
-              fill='#00AA00'
+            <Line
+              key={`skeletonline_${index}`}
+              x1={kp1.cx}
+              y1={kp1.cy}
+              x2={kp2.cx}
+              y2={kp2.cy}
               stroke='white'
+              strokeWidth='2'
             />
           );
-        });
-
-      return <Svg style={styles.svg}>{keypoints}</Svg>;
+        }
+        return null;
+      });
+  
+      return (
+        <Svg style={styles.svg}>
+          {renderedKeypoints}
+          {renderedSkeleton}
+        </Svg>
+      );
     } else {
       return <View></View>;
     }
