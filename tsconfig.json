@@ -6,7 +6,6 @@
     "allowJs": true
   },
   "include":[
-    "src/**/*",
-    "pages/**/*"
+    "src/**/*"
   ]
 }
