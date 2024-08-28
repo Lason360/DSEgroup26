@@ -1,19 +1,33 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 
+function useSquatCounter() {
+    const [repCount, setRepCount] = useState(0);
+    const [direction, setDirection] = useState(null); // "up" or "down"
+    const [position, setPosition] = useState("stand"); // "squat" or "stand"
 
+    useEffect(() => {
+        if (direction === "up" && position === "squat") {
+            // A full squat rep is counted when the direction changes to up from down
+            setRepCount(prevRepCount => prevRepCount + 1);
+            setPosition("stand");
+        }
+    }, [direction, position]);
 
-export async function predict(inputTensor) {
-    if (!model) {
-      throw new Error("Model not loaded yet. Call loadModel() first.");
+    function countReps(prediction) {
+        if (prediction > 0.3) {
+            setPosition("squat");
+            if (direction !== "down") {
+                setDirection("down");
+            }
+        } else {
+            setPosition("stand");
+            if (direction !== "up") {
+                setDirection("up");
+            }
+        }
     }
-  
-    const reshapedTensor = inputTensor.reshape([1, 34]); 
-    try {
-      const prediction = model.predict(reshapedTensor);
-      const predictionArray = await prediction.array(); 
-      return predictionArray[0]; 
-    } catch (error) {
-      console.error("Error during prediction:", error);
-      throw new Error("Prediction failed");
-    }
-  }
+
+    return { repCount, countReps };
+}
+
+export { useSquatCounter, countReps };
